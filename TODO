@@ -1,0 +1,5 @@
+- get client and server subdirectories from environment variables
+  ELIOM_CLIENT_DIR and ELIOM_SERVER_DIR and make use them in 
+  dependencies and targets
+- Ocsigen configuration file should be templated with user name and group
+
