@@ -1,0 +1,18 @@
+Hi there!
+
+You guessed it: this is an ocamlbuild[1] plugin file that enables correct builds
+of Eliom[2] multi-source projects.
+The important bit in the repo is the myocamlbuild.ml OCaml source file.
+Sample Makefile and sources show how to use the plugin.
+
+Limitations:
+- the client and server side build targets are hard-coded to _build/_server and
+_build/_client, respectively.
+- the eliomc, js_of_eliom must exist on the search path ($PATH).
+- The use and group in the ocsigen configuration file are hard-coded to serge, staff.
+  Change them to your liking before use.
+--
+Serge Zloto
+
+[1] http://brion.inria.fr/gallium/index.php/Ocamlbuild
+[2] http://ocsigen.org/eliom/

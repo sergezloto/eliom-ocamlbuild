@@ -1,0 +1,5 @@
+"_local": -traverse
+"web": -traverse
+true: thread
+true: debug
+false: verbose
