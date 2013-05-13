@@ -393,11 +393,12 @@ let _ =
 *)
       flag ["js_of_ocaml"; "debug"] & S[A"-pretty";A"-debuginfo";A"-noinline"];
       flag ["js_of_eliom"; "debug"] & S[A"-pretty";A"-debuginfo";A"-noinline"];
-      (* For each ocamlfind package one inject the -package option
+      (* For each ocamlfind package, inject the -package option
          when compiling, computing dependencies, generating
          documentation and linking. *)
       List.iter begin fun pkg ->
         flag ["eliom"; "compile"; "package("^pkg^")"] & S[A"-package"; A pkg];
+        flag ["eliom"; "compile"; "pkg_"^pkg] & S[A"-package"; A pkg];
         flag ["ocaml"; "compile";  "pkg_"^pkg] & S[A"-package"; A pkg];
         flag ["ocaml"; "ocamldep"; "pkg_"^pkg] & S[A"-package"; A pkg];
         flag ["ocaml"; "doc";      "pkg_"^pkg] & S[A"-package"; A pkg];
