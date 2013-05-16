@@ -2,6 +2,8 @@
   open Eliom_lib
   open Html
   open App
+
+  let value = Dep.a_value
 }}
 
 {client{

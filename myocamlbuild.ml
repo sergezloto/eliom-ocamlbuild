@@ -131,7 +131,7 @@ let prepare_eliom_compile =
     let _ = List.iter (fun (_, m) -> Ocamlbuild_pack.Log.dprintf 5 "%s depends on %s" eliom m) modules in
     let results =
       let modfile m =  
-        let exts = match mode with `byte->["cmi"] | `native->["cmx"] in
+        let exts = match mode with `byte->["cmo"] | `native->["cmx"] in
         let mf = expand_module include_dirs m exts in
         List.iter (Ocamlbuild_pack.Log.dprintf 5 "module %s in file %s" m) mf;
         mf
