@@ -1,1 +1,1 @@
-let a_value = 1
+let a_value = Dep1.x + 1

@@ -43,7 +43,7 @@ let print_paths l =
   List.iter (fun s -> Printf.printf "%s  " s) l;
   Printf.printf "\n"
 
-(* eliomdep for server side *)
+(* eliomdep *)
 let eliomdep cliserv ?(incs = []) tags arg out = 
   let tags = tags ++ "eliom" ++ "byte" ++ "depends" in
   (* let is = S (List.map (fun s -> S [A"-I"; P s]) incs) in *) 
@@ -68,12 +68,6 @@ let eliomc_a ?(incs = []) tags arg out =
   let tags = tags ++ "eliom" ++ "byte" ++ "link" in
   let is = S (List.map (fun s -> S [A"-I"; P s]) incs) in
   Cmd(S [A"eliomc"; A"-a"; A"-o"; Px out; is; T tags; P arg])
-
-(* eliomopt infer types *)
-let eliomopt_i ?(incs = []) tags arg out = 
-  let tags = tags ++ "eliom" ++ "native" ++ "infer" in
-  let is = S (List.map (fun s -> S [A"-I"; P s]) incs) in
-  Cmd(S [A"eliomopt"; A"-infer"; A"-o"; Px out; is; T tags; P arg])
 
 (* eliomopt for server side *)
 let eliomopt_c ?(incs = []) tags arg out = 
@@ -118,7 +112,7 @@ let js_of_eliom_js ?(incs = []) tags args out =
 (* Prepares an eliom compilation; add build targets as per dependancies; ml is an eliom or eliomi file *)
 let prepare_eliom_compile =
   let level = ref 0 in
-  fun ?(mode=`byte) build eliom ->
+  fun build eliom ->
     incr level;
     Ocamlbuild_pack.Log.dprintf 3 "%*sPrepare dependencies for %s" !level "-" eliom;
     let this_module = module_name_of_pathname eliom in
@@ -131,9 +125,9 @@ let prepare_eliom_compile =
     let _ = List.iter (fun (_, m) -> Ocamlbuild_pack.Log.dprintf 5 "%s depends on %s" eliom m) modules in
     let results =
       let modfile m =  
-        let exts = match mode with `byte->["cmo"] | `native->["cmx"] in
+        let exts = ["cmi"] in
         let mf = expand_module include_dirs m exts in
-        List.iter (Ocamlbuild_pack.Log.dprintf 5 "module %s in file %s" m) mf;
+        List.iter (Ocamlbuild_pack.Log.dprintf 5 "%*smodule %s in file %s" !level "-" m) mf;
         mf
       in
       build (List.map (fun (_, m) -> modfile m) modules) in
@@ -160,20 +154,9 @@ let add_rules () =
     (* Client compilation: add include paths prepended with _client/ *)
     incs @ (List.map (fun p -> "_client/" ^ p) incs) in
   begin
-    rule
-      "eliomdep: eliom -> _server/eliom.depends"
-      ~prod:"_server/%.eliom.depends"
-      ~dep:"%.eliom"
-      begin
-        fun env _build -> 
-          begin
-            let src = env "%.eliom"
-            and dst = env "_server/%.eliom.depends" in
-            let tags = tags_of_pathname src in
-            let incs = eliom_srv_includes in
-            eliomdep `server ~incs tags src dst
-          end
-      end;
+    copy_rule
+      "copy: mllib -> _server/mllib"
+      "%.mllib" "_server/%.mllib";
     rule
       "eliomdep: eliomi -> _server/eliomi.depends"
       ~prod:"_server/%.eliomi.depends"
@@ -189,23 +172,19 @@ let add_rules () =
           end
       end;
     rule
-      "eliomc: eliom -> _server/type_mli"
-      ~prod:"_server/%.type_mli"
-      ~deps:["%.eliom"; "_server/%.eliom.depends"]
+      "eliomdep: eliom -> _server/eliom.depends"
+      ~prod:"_server/%.eliom.depends"
+      ~dep:"%.eliom"
       begin
         fun env _build -> 
           begin
-            let _ =
-              let depfile = env "_server/%.eliom" in
-              prepare_eliom_compile _build depfile
-            in
             let src = env "%.eliom"
-            and dst = env "_server/%.type_mli" in
+            and dst = env "_server/%.eliom.depends" in
             let tags = tags_of_pathname src in
             let incs = eliom_srv_includes in
-            eliomc_i ~incs tags src dst
+            eliomdep `server ~incs tags src dst
           end
-       end; 
+      end;
     rule
       "eliomc: eliomi -> _server/type_mli"
       ~prod:"_server/%.type_mli"
@@ -218,6 +197,24 @@ let add_rules () =
               prepare_eliom_compile _build depfile
             in
             let src = env "%.eliomi"
+            and dst = env "_server/%.type_mli" in
+            let tags = tags_of_pathname src in
+            let incs = eliom_srv_includes in
+            eliomc_i ~incs tags src dst
+          end
+       end; 
+    rule
+      "eliomc: eliom -> _server/type_mli"
+      ~prod:"_server/%.type_mli"
+      ~deps:["%.eliom"; "_server/%.eliom.depends"]
+      begin
+        fun env _build -> 
+          begin
+            let _ =
+              let depfile = env "_server/%.eliom" in
+              prepare_eliom_compile _build depfile
+            in
+            let src = env "%.eliom"
             and dst = env "_server/%.type_mli" in
             let tags = tags_of_pathname src in
             let incs = eliom_srv_includes in
@@ -243,6 +240,24 @@ let add_rules () =
           end
        end; 
     rule
+      "eliomc: _server/cmi & eliom -> _server/cmo"
+      ~prod:"_server/%.cmo"
+      ~deps:["%.eliom"; "_server/%.cmi"; "%.eliomi"] (* .eliomi not present => this rule is skipped *)
+      begin
+        fun env _build -> 
+          begin
+            let _ =
+              let depfile = env "_server/%.eliom" in
+              prepare_eliom_compile _build depfile
+            in
+            let src = env "%.eliom"
+            and dst = env "_server/%.cmo" in
+            let tags = tags_of_pathname src in
+            let incs = eliom_srv_includes in
+            eliomc_c ~incs tags src dst
+          end
+       end; 
+    rule
       "eliomc: eliom -> _server/cmo & _server/cmi"
       ~prods:["_server/%.cmo"; "_server/%.cmi"]
       ~deps:["%.eliom"; "_server/%.type_mli"]
@@ -261,6 +276,24 @@ let add_rules () =
           end
       end;
     rule
+      "eliomopt: _server/cmi & eliom -> _server/cmx"
+      ~prod:"_server/%.cmx"
+      ~deps:["%.eliom"; "_server/%.cmi"; "%.eliomi"] (* .eliomi not present => this rule is skipped *)
+      begin
+        fun env _build -> 
+          begin
+            let _ =
+              let depfile = env "_server/%.eliom" in
+              prepare_eliom_compile _build depfile
+            in
+            let src = env "%.eliom"
+            and dst = env "_server/%.cmx" in
+            let tags = tags_of_pathname src in
+            let incs = eliom_srv_includes in
+            eliomopt_c ~incs tags src dst
+          end
+       end; 
+    rule
       "eliomopt: eliom -> _server/cmx & _server/o"
       ~prods:["_server/%.cmx"; "_server/%.cmi"; "_server/%.o"]
       ~deps:["%.eliom";"_server/%.type_mli"]
@@ -269,7 +302,7 @@ let add_rules () =
           begin
             let _ =
               let depfile = env "_server/%.eliom" in
-              prepare_eliom_compile ~mode:`native _build depfile
+              prepare_eliom_compile _build depfile
             in
             let src = env "%.eliom"
             and dst = env "_server/%.cmx" in
@@ -278,21 +311,9 @@ let add_rules () =
             eliomopt_c ~incs tags src dst
           end
       end;
-    rule
-      "eliomopt: _server/cmxa -> _server/cmxs"
-      ~prods:["_server/%.cmxs"]
-      ~deps:["_server/%.cmxa"]
-      begin
-        fun env _build -> 
-          begin
-            let src = env "_server/%.cmxa"
-            and dst = env "_server/%.cmxs" in
-            let tags = tags_of_pathname src in
-            let incs = eliom_srv_includes in
-            eliomopt_shared ~incs tags src dst
-          end
-      end;
-
+    copy_rule
+      "copy: mllib -> _client/mllib"
+      "%.mllib" "_client/%.mllib";
     rule
       "eliomdep: eliom -> _client/eliom.depends"
       ~prod:"_client/%.eliom.depends"
@@ -344,7 +365,7 @@ let add_rules () =
             js_of_eliom_c ~incs tags src dst
       end;
     rule 
-      "js_of_eliom: _client/cma -> js"
+      "js_of_eliom: _client/cma -> _client/js"
       ~prod:"_client/%.js"
       ~dep:"_client/%.cma"
       begin
@@ -384,13 +405,19 @@ let _ =
       ()
 
   | After_rules ->
+      (* Add some tags to the standard set *)
       flag ["ocaml"; "compile"; "verbose"] & A"-verbose";
-      (* js_of_ocaml tags *)
-(*
-      flag ["ocaml";"compile";"js"] & S[A"-syntax";A"camlp4o";A"-package";A"js_of_ocaml.syntax";A"-package";A"js_of_ocaml"];
-      flag ["ocaml";"doc";"js"] & S[A"-syntax";A"camlp4o";A"-package";A"js_of_ocaml.syntax";A"-package";A"js_of_ocaml"];
-      flag ["ocaml";"ocamldep";"js"] & S[A"-pp";A"camlp4o pa_js.cmo"];
-*)
+      flag ["ocaml"; "compile"; "unsafe"] & A"-unsafe";
+      flag ["ocaml"; "compile"; "noassert"] & A"-noassert";
+      flag ["ocaml"; "compile"; "principal"] & A"-principal";
+
+      flag ["eliom"; "compile"; "debug"] & S[A"-g"];
+      flag ["eliom"; "compile"; "unsafe"] & A"-unsafe";
+      flag ["eliom"; "compile"; "verbose"] & A"-verbose";
+      flag ["eliom"; "compile"; "noassert"] & A"-noassert";
+      flag ["eliom"; "compile"; "annot"] & A"-annot";
+      flag ["eliom"; "compile"; "principal"] & A"-principal";
+      
       flag ["js_of_ocaml"; "debug"] & S[A"-pretty";A"-debuginfo";A"-noinline"];
       flag ["js_of_eliom"; "debug"] & S[A"-pretty";A"-debuginfo";A"-noinline"];
       (* For each ocamlfind package, inject the -package option

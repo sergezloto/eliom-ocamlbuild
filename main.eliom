@@ -7,6 +7,7 @@
 }}
 
 {client{
+  let _ = Client_dep.x + 1
   let () = alert "Once only during initialization of the client, i.e. before the document is available."
   let () =
     Eliom_client.onload
