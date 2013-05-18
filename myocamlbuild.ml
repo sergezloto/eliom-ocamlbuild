@@ -7,6 +7,7 @@ open Ocamlbuild_plugin
 (* these functions are not really officially exported *)
 let run_and_read = Ocamlbuild_pack.My_unix.run_and_read
 let path_dependencies_of = Ocamlbuild_pack.Ocaml_utils.path_dependencies_of
+let bindir = Ocamlbuild_pack.Ocamlbuild_where.bindir
 
 let split s ch =
   let x = ref [] in
@@ -43,73 +44,63 @@ let print_paths l =
   List.iter (fun s -> Printf.printf "%s  " s) l;
   Printf.printf "\n"
 
+(* Prepend commands with bindir *)
+let c cmd = A(!bindir / cmd)
+
 (* eliomdep *)
 let eliomdep cliserv ?(incs = []) tags arg out = 
   let tags = tags ++ "eliom" ++ "byte" ++ "depends" in
   (* let is = S (List.map (fun s -> S [A"-I"; P s]) incs) in *) 
   (* NOTE: include dirs are used when resolving required modules *)
   let cs = match cliserv with `client -> A"-client" | `server -> A"-server" in
-  Cmd(S[A"eliomdep"; cs; A"-modules"; (*is;*) T tags; P arg; Sh ">"; Px out])
+  Cmd(S[c"eliomdep"; cs; A"-modules"; (*is;*) T tags; P arg; Sh ">"; Px out])
 
 (* eliomc infer types *)
 let eliomc_i ?(incs = []) tags arg out = 
   let tags = tags ++ "eliom" ++ "byte" ++ "compile" ++ "infer" in
   let is = S (List.map (fun s -> S [A"-I"; P s]) incs) in
-  Cmd(S [A"eliomc"; A"-infer"; A"-o"; Px out; is; T tags; P arg])
+  Cmd(S [c"eliomc"; A"-infer"; A"-o"; Px out; is; T tags; P arg])
 
 (* eliomc for server side *)
 let eliomc_c ?(incs = []) tags arg out = 
   let tags = tags ++ "eliom" ++ "byte" ++ "compile" in
   let is = S (List.map (fun s -> S [A"-I"; P s]) incs) in
-  Cmd(S [A"eliomc"; A"-c"; A"-o"; Px out; is; T tags; P arg])
-
-(* eliomc server side, bytecode library *)
-let eliomc_a ?(incs = []) tags arg out = 
-  let tags = tags ++ "eliom" ++ "byte" ++ "link" in
-  let is = S (List.map (fun s -> S [A"-I"; P s]) incs) in
-  Cmd(S [A"eliomc"; A"-a"; A"-o"; Px out; is; T tags; P arg])
+  Cmd(S [c"eliomc"; A"-c"; A"-o"; Px out; is; T tags; P arg])
 
 (* eliomopt for server side *)
 let eliomopt_c ?(incs = []) tags arg out = 
   let tags = tags ++ "eliom" ++ "native" ++ "compile" in
   let is = S (List.map (fun s -> S [A"-I"; P s]) incs) in
-  Cmd(S [A"eliomopt"; A"-c"; A"-o"; Px out; is; T tags; P arg])
-
-(* eliomopt server side, native library *)
-let eliomopt_a ?(incs = []) tags arg out = 
-  let tags = tags ++ "eliom" ++ "native" ++ "link" in
-  let is = S (List.map (fun s -> S [A"-I"; P s]) incs) in
-  Cmd(S [A"eliomopt"; A"-a"; A"-o"; Px out; is; T tags; P arg])
-
+  Cmd(S [c"eliomopt"; A"-c"; A"-o"; Px out; is; T tags; P arg])
 (* eliomopt server side, shared library *)
 let eliomopt_shared ?(incs = []) tags arg out = 
   let tags = tags ++ "eliom" ++ "native" ++ "link" in
   let is = S (List.map (fun s -> S [A"-I"; P s]) incs) in
-  Cmd(S [A"eliomopt"; A"-shared"; A"-linkall"; A"-o"; Px out; is; T tags; P arg])
+  Cmd(S [c"eliomopt"; A"-shared"; A"-linkall"; A"-o"; Px out; is; T tags; P arg])
 
 (* js_of_ocaml for client side *)
 let js_of_ocaml_js  ?(incs = []) tags arg out = 
   let tags = tags ++ "js_of_ocaml" in
   let is = S (List.map (fun s -> S [A"-I"; P s]) incs) in
-  Cmd(S [A"js_of_ocaml"; A "-o"; Px out; is; T tags; P arg])
+  Cmd(S [c"js_of_ocaml"; A "-o"; Px out; is; T tags; P arg])
 
 (* js_of_eliom for client side *)
 let js_of_eliom_i ?(incs = []) tags arg out =
   let is = S (List.map (fun s -> S [A"-I"; P s]) incs) in
-  Cmd(S[A"js_of_eliom"; A"-c"; A"-o"; Px out; A"-type-dir"; A"_server"; is; T tags; P arg])
+  Cmd(S[c"js_of_eliom"; A"-c"; A"-o"; Px out; A"-type-dir"; A"_server"; is; T tags; P arg])
 
 (* js_of_eliom for client side *)
 let js_of_eliom_c ?(incs = []) tags arg out =
   let is = S (List.map (fun s -> S [A"-I"; P s]) incs) in
-  Cmd(S[A"js_of_eliom"; A"-c"; A"-o"; Px out; A"-type-dir"; A"_server"; is; T tags; P arg])
+  Cmd(S[c"js_of_eliom"; A"-c"; A"-o"; Px out; A"-type-dir"; A"_server"; is; T tags; P arg])
 
 (* js_of_eliom for client side *)
 let js_of_eliom_js ?(incs = []) tags args out =
   let is = S (List.map (fun s -> S [A"-I"; P s]) incs) in
   let p_args = S (List.map (fun a -> P a) args) in
-  Cmd(S[A"js_of_eliom"; A"-linkall"; A"-o"; Px out; is; T tags; p_args])
+  Cmd(S[c"js_of_eliom"; A"-linkall"; A"-o"; Px out; is; T tags; p_args])
 
-(* Prepares an eliom compilation; add build targets as per dependancies; ml is an eliom or eliomi file *)
+(* Prepares an eliom compilation; add build targets as per dependancies; eliom is an eliom or eliomi file *)
 let prepare_eliom_compile =
   let level = ref 0 in
   fun build eliom ->
