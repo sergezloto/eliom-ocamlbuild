@@ -233,7 +233,7 @@ let add_rules () =
     rule
       "eliomc: _server/cmi & eliom -> _server/cmo"
       ~prod:"_server/%.cmo"
-      ~deps:["%.eliom"; "_server/%.cmi"; "%.eliomi"] (* .eliomi not present => this rule is skipped *)
+      ~deps:["%.eliomi"; "_server/%.cmi"; "%.eliom"] (* .eliomi not present => this rule is skipped *)
       begin
         fun env _build -> 
           begin
@@ -269,7 +269,7 @@ let add_rules () =
     rule
       "eliomopt: _server/cmi & eliom -> _server/cmx"
       ~prod:"_server/%.cmx"
-      ~deps:["%.eliom"; "_server/%.cmi"; "%.eliomi"] (* .eliomi not present => this rule is skipped *)
+      ~deps:["%.eliomi";"_server/%.cmi"; "%.eliom"] (* .eliomi not present => this rule is skipped *)
       begin
         fun env _build -> 
           begin
