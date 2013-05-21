@@ -1,9 +1,10 @@
 ocamlbuild := ocamlbuild -use-ocamlfind -classic-display -j 1
 main_server := $(addprefix _server/, server.cma server.cmxs)
 main_client := $(addprefix _client/, client.js)
+all := all.otarget
 
 all: 
-	$(ocamlbuild) $(main_server) $(main_client)
+	$(ocamlbuild) $(all)
 
 server:
 	$(ocamlbuild) $(main_server)
