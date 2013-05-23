@@ -413,7 +413,7 @@ let _ =
       flag ["eliom"; "compile"; "principal"] & A"-principal";
       
       flag ["js_of_ocaml"; "debug"] & S[A"-pretty";A"-debuginfo";A"-noinline"];
-      flag ["js_of_eliom"; "debug"] & S[A"-pretty";A"-debuginfo";A"-noinline"];
+      flag ["js_of_eliom"; "debug"] & S[A"-jsopt";A"-pretty";A"-jsopt";A"-debuginfo";A"-jsopt";A"-noinline"];
       (* For each ocamlfind package, inject the -package option
          when compiling, computing dependencies, generating
          documentation and linking. *)
