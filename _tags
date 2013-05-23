@@ -5,3 +5,7 @@ true: thread
 true: debug
 false: verbose
 true: annot
+
+# Using packages: unix on the server, extlib on the client
+true: pkg_unix, cpkg_extlib
+
