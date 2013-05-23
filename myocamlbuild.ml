@@ -98,7 +98,7 @@ let js_of_eliom_c ?(incs = []) tags arg out =
 
 (* js_of_eliom for client side *)
 let js_of_eliom_js ?(incs = []) tags args out =
-  let tags = tags ++ "js_of_eliom" ++ "link" in
+  let tags = tags ++ "js_of_eliom" ++ "jslink" in
   let is = S (List.map (fun s -> S [A"-I"; P s]) incs) in
   let p_args = S (List.map (fun a -> P a) args) in
   Cmd(S[c"js_of_eliom"; A"-linkall"; A"-o"; Px out; is; T tags; p_args])
@@ -420,8 +420,10 @@ let _ =
       List.iter begin fun pkg ->
         flag ["eliom"; "compile"; "package("^pkg^")"] & S[A"-package"; A pkg];
         flag ["eliom"; "compile"; "pkg_"^pkg] & S[A"-package"; A pkg];
-        flag ["js_of_eliom"; "compile"; "package("^pkg^")"] & S[A"-package"; A pkg];
-        flag ["js_of_eliom"; "compile"; "pkg_"^pkg] & S[A"-package"; A pkg];
+        flag ["js_of_eliom"; "compile"; "cpackage("^pkg^")"] & S[A"-package"; A pkg];
+        flag ["js_of_eliom"; "compile"; "cpkg_"^pkg] & S[A"-package"; A pkg];
+        flag ["js_of_eliom"; "jslink"; "cpackage("^pkg^")"] & S[A"-package"; A pkg];
+        flag ["js_of_eliom"; "jslink"; "cpkg_"^pkg] & S[A"-package"; A pkg];
         flag ["ocaml"; "compile";  "pkg_"^pkg] & S[A"-package"; A pkg];
         flag ["ocaml"; "ocamldep"; "pkg_"^pkg] & S[A"-package"; A pkg];
         flag ["ocaml"; "doc";      "pkg_"^pkg] & S[A"-package"; A pkg];
