@@ -9,3 +9,6 @@ true: annot
 # Using packages: unix on the server, extlib on the client
 true: pkg_unix, cpkg_extlib
 
+# Using packages with ocamlfind (-use-ocamlfind): unix on the server, extlib on the client
+#true: package(unix), cpackage(extlib)
+
