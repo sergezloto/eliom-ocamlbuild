@@ -5,13 +5,13 @@ of Eliom[2] multi-source projects.
 The important bit in the repo is the myocamlbuild.ml OCaml source file.
 Sample Makefile and sources show how to use the plugin.
 
-Limitations:
+Usage & limitations:
 - if the server part and the client part are made up of different modules, the modules must be referenced in
   different `mllib` files as in this skeleton (`server.mllib` and `client.mllib`, resp.)
   The application name must match the `.js` filename as usual.
 - the client and server side build subdirectories are hard-coded to `_build/_server` and
   `_build/_client`, respectively.
-- `eliomdep`, `eliomc`, `js_of_eliom` must exist on the search path ($PATH).
+- `eliomdep`, `eliomc`, `js_of_eliom` are found where ocambuild is installed.
 - The user and group in the ocsigen configuration file are hard-coded to serge, staff.
   Change them to your liking before use.
 - The persistence backend is set up as `sqlite` in the ocsigen configuration file.
